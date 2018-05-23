@@ -2,32 +2,37 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
-#include <sstream>
+#include <iostream>
 #include <string>
-#include "clist.h"
 
-/** g++ 8.1.0
-   * -O3 -march=native
-   * to implement: correct division algorithm, error handling interface, relational and bitshifting operator overloading
-   * make a division algorithm parallel using omp.h (--fopenmp)
-   */
+/*  g++ 8.1.0: compile parameters -O3 -march=native
+ *  has not yet been tested under MSVC, although there are no specific features used
+ */
 
 template <std::size_t SIZE> class Binary {
 
-  #define AND         &&
-  #define BIT_AND &
-  #define BIT_OR    |
-  #define NOT         !
-  #define OR          ||
-  #define XOR         ^
+  #define AND          &&
+  #define BIT_AND      &
+  #define BIT_OR       |
+  #define NOT          !
+  #define OR           ||
+  #define XOR          ^
 
+  #define XNOR(a, b)   \
+  { return !(a XOR b); }
+
+  #define __SIZE_ASSERTION__ \
+  static_assert(!((SIZE != 0) && ((SIZE & (SIZE - 1)))) && !(SIZE > 32));
   using bytearray_t = std::array<bool, SIZE>;
 
+
  public:
-  Binary() { static_assert(!((SIZE != 0) && ((SIZE & (SIZE - 1))))); }
+
+  Binary() { __SIZE_ASSERTION__ }
 
   //! explicit constructor to avoid implicit convert from char
   explicit Binary(int32_t num) {
+    __SIZE_ASSERTION__
     for (std::size_t idx = SIZE; idx-- > 0;)
       num & (1 << (SIZE - 1 - idx)) ? bytearray[idx] = 1 : bytearray[idx] = 0;
   }
@@ -44,7 +49,7 @@ template <std::size_t SIZE> class Binary {
   friend std::ostream& operator<<(std::ostream& os, const Binary& that) {
     os << "[";
     for (const auto& bit : that.bytearray) os << bit;
-    os << "] " << Binary::B2D(that.bytearray);
+    os << "] -> " << Binary::B2D(that.bytearray);
     return os;
   }
 
@@ -52,33 +57,50 @@ template <std::size_t SIZE> class Binary {
     this->bytearray = that.bytearray;
     return *this;
   }
+
   Binary operator+(const Binary& that) noexcept {
     Binary temp = *this;
     temp.bytearray = Binary::add(this->bytearray, that.bytearray);
     return temp;
   }
+
   Binary operator-(const Binary& that) noexcept {
     Binary temp = *this;
     temp.bytearray = Binary::sub(this->bytearray, that.bytearray);
     return temp;
   }
+
   Binary operator*(const Binary& that) noexcept {
     Binary temp = *this;
     temp.bytearray = Binary::mul(this->bytearray, that.bytearray);
     return temp;
   }
+
+  /*
+
   Binary operator/(const Binary& that) noexcept {
     Binary temp = *this;
     temp.bytearray = Binary::div(this->bytearray, that.bytearray);
     return temp;
   }
 
-  // comparators
-  // [ ... ] implement relational [ <, > ] operators
+  */
+
+  // bit-shifting overloading
+  Binary operator<<(unsigned shift) {
+    for (std::size_t i = 0; i < shift; ++i) lsh(bytearray);
+    return *this;
+  }
+
+  Binary operator>>(unsigned shift) {
+    for (std::size_t i = 0; i < shift; ++i) rsh(bytearray);
+    return *this;
+  }
 
   friend bool operator==(const Binary& lhs, const Binary& rhs) {
     for (std::size_t idx = 0; idx < SIZE; ++idx) {
-      if ((!(lhs.bytearray[idx] XOR rhs.bytearray[idx])) == 0) return false;
+      if (lhs.bytearray[idx] XOR rhs.bytearray[idx])
+        return false;
     }
     return true;
   }
@@ -90,6 +112,7 @@ template <std::size_t SIZE> class Binary {
   //==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
  private:
+
   bytearray_t bytearray;
 
   static bool ifExists(const bytearray_t& that, const bool& param) noexcept {
@@ -130,16 +153,16 @@ template <std::size_t SIZE> class Binary {
 
   static bytearray_t mul(bytearray_t lhs, bytearray_t rhs) {
     bytearray_t res = {0};
-    for (; ifExists(lhs, 1);) {
+    for (; ifExists(lhs, 1); ) {
       if (rhs[SIZE - 1] BIT_AND 1) res = Binary::add(res, lhs);
       rsh(rhs); lsh(lhs);
     }
     return res;
   }
 
+  /*
   [[deprecated("... doesn't work for non-integer results")]]
-  static bytearray_t
-  div(bytearray_t lhs, bytearray_t rhs) {
+  static bytearray_t div(bytearray_t lhs, bytearray_t rhs) {
     bytearray_t res = {0};
     for (; ifExists(lhs, 1);) {
       lhs = sub(lhs, rhs);
@@ -147,4 +170,8 @@ template <std::size_t SIZE> class Binary {
     }
     return res;
   }
+  */
+
 };
+
+int main() { std::cout << (Binary<16>(4) << 2) << "\n"; }
