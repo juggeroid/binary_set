@@ -14,12 +14,12 @@
 
 template <std::size_t SIZE> class Binary {
 
-  #define AND     &&
+  #define AND         &&
   #define BIT_AND &
-  #define BIT_OR  |
-  #define NOT     !
-  #define OR      ||
-  #define XOR     ^
+  #define BIT_OR    |
+  #define NOT         !
+  #define OR           ||
+  #define XOR         ^
 
   using bytearray_t = std::array<bool, SIZE>;
 
