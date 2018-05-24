@@ -126,7 +126,7 @@ template <std::size_t SIZE> class Binary {
     bool rem = 0;
     for (std::size_t idx = SIZE; idx-- > 0;) {
       res[idx] = rem ^ (lhs[idx] ^ rhs[idx]);
-      rem = (not lhs[idx] & rhs[idx]) or (not lhs[idx] & rem) or (rhs[idx] & rem);
+      rem = (! lhs[idx] & rhs[idx]) || (! lhs[idx] & rem) || (rhs[idx] & rem);
     }
     return res;
   }
