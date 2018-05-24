@@ -20,8 +20,8 @@ template <std::size_t SIZE> class Binary {
     *           -O3 -march=native --std=c++14
     */
   
-  static_assert(SIZE > 0, "zero and negative values are not allowed");
-  static_assert(SIZE <= 32, "size must not exceed 32");
+  static_assert(SIZE > 0,                     "zero and negative values are not allowed");
+  static_assert(SIZE <= 32,                   "size must not exceed 32");
   static_assert(SIZE && !(SIZE & (SIZE - 1)), "size must be a power of 2");
 
   Binary() {}
