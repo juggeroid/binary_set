@@ -118,4 +118,7 @@ template <std::size_t SIZE> class Binary {
 
 };
 
-int main() { std::cout << (Binary<16>(8) << 2) << "\n"; }
+int main() {
+  for (std::size_t i = 0; i < 100; ++i) std::cout << Binary<32>(i) * Binary<32>(i + 2) << "\n";
+  return 0;
+}
