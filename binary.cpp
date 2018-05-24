@@ -5,16 +5,21 @@
 #include <iostream>
 #include <string>
 
-/*  g++ 8.1.0: compile parameters -O3 -march=native
- *  has not yet been tested under MSVC, although there are no specific features used
- */
-
 template <std::size_t SIZE> class Binary {
 
   using bytearray_t = std::array<bool, SIZE>;
 
  public:
 
+   /*
+    *  Binary:  a basic templated class made solely for educational purposes
+    *  TODO:    division (with remainder?), rot operations,
+    *           overflow exceptions, bits conveying
+    *
+    *           tested under Linux using g++ 8.1.0;
+    *           -O3 -march=native --std=c++14
+    */
+  
   static_assert(SIZE > 0, "zero and negative values are not allowed");
   static_assert(SIZE <= 32, "size must not exceed 32");
   static_assert(SIZE && !(SIZE & (SIZE - 1)), "size must be a power of 2");
@@ -36,7 +41,7 @@ template <std::size_t SIZE> class Binary {
     return decimal;
   }
 
-  inline bytearray_t getField() const noexcept { return this->bytearray; }
+  bytearray_t getField() const noexcept { return this->bytearray; }
 
   friend std::ostream& operator<<(std::ostream& os, const Binary& that) {
     os << "[";
@@ -45,10 +50,8 @@ template <std::size_t SIZE> class Binary {
     return os;
   }
 
-  Binary operator=(const Binary& that) noexcept {
-    this->bytearray = that.bytearray;
-    return *this;
-  }
+  Binary operator=(const Binary& that) noexcept
+  { bytearray = that.bytearray; }
 
   Binary operator+(const Binary& that) noexcept {
     Binary temp = *this;
@@ -67,50 +70,19 @@ template <std::size_t SIZE> class Binary {
     temp.bytearray = Binary::mul(this->bytearray, that.bytearray);
     return temp;
   }
+  
+  bool operator==(const Binary& arg) const noexcept
+  { return (bytearray == arg.bytearray); }
 
-  // bit-shifting overloading
-  Binary operator<<(unsigned shift) {
-    for (std::size_t i = 0; i < shift; ++i) lsh(bytearray);
-    return *this;
-  }
-
-  Binary operator>>(unsigned shift) {
-    for (std::size_t i = 0; i < shift; ++i) rsh(bytearray);
-    return *this;
-  }
-
-  friend bool operator==(const Binary& lhs, const Binary& rhs) {
-    for (std::size_t idx = 0; idx < SIZE; ++idx) {
-      if (lhs.bytearray[idx] ^ rhs.bytearray[idx])
-        return false;
-    }
-    return true;
-  }
-
-  friend bool operator!=(const Binary& lhs, const Binary& rhs) {
-    return !(lhs == rhs);
-  }
+  bool operator!=(const Binary& arg) const noexcept
+  { return !(bytearray == arg.bytearray); }
 
   //==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
  private:
 
   bytearray_t bytearray;
-
-  static bool ifExists(const bytearray_t& that, const bool& param) noexcept {
-    return std::find(std::begin(that), std::end(that), param) != std::end(that);
-  }
-
-  static void lsh(bytearray_t& that) noexcept {
-    for (std::size_t idx = 0; idx < SIZE - 1; idx++) that[idx] = that[idx + 1];
-    that[SIZE - 1] = 0;
-  }
-
-  static void rsh(bytearray_t& that) noexcept {
-    for (std::size_t idx = SIZE - 1; idx > 0; idx--) that[idx] = that[idx - 1];
-    that[0] = 0;
-  }
-
+  
   static bytearray_t add(const bytearray_t& lhs, const bytearray_t& rhs) {
     bytearray_t res = {0};
     bool rem = 0;
@@ -133,9 +105,13 @@ template <std::size_t SIZE> class Binary {
 
   static bytearray_t mul(bytearray_t lhs, bytearray_t rhs) {
     bytearray_t res = {0};
-    for (; ifExists(lhs, 1); ) {
-      if (rhs[SIZE - 1] & 1) res = Binary::add(res, lhs);
-      rsh(rhs); lsh(lhs);
+    while (std::find(std::begin(lhs), std::end(lhs), 1) != std::end(lhs)) {
+      if (rhs[SIZE - 1] & 1)
+        res = Binary::add(res, lhs);
+      //! @note right and left shifting
+      std::rotate(std::rbegin(rhs), std::rbegin(rhs) + 1, std::rend(rhs));
+      std::rotate(std::begin(lhs), std::begin(lhs) + 1, std::end(lhs));
+      rhs[0] = 0; lhs[SIZE - 1] = 0;
     }
     return res;
   }
