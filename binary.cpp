@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-template <std::size_t SIZE> class Binary {
+template <std::size_t SIZE = 32> class Binary {
 
   using bytearray_t = std::array<bool, SIZE>;
 
