@@ -34,14 +34,15 @@ template <std::size_t SIZE = 32> class Binary {
     }
   }
 
-  static int32_t B2D(const bytearray_t& that) noexcept {
+  //! @note uint32_t ???
+  int32_t to_int() noexcept {
     int32_t decimal = 0;
     for (std::size_t idx = 0; idx < SIZE; ++idx)
-      decimal = decimal << 1 | that[idx];
+      decimal = decimal << 1 | bytearray[idx];
     return decimal;
   }
 
-  bytearray_t getField() const noexcept { return this->bytearray; }
+  bytearray_t& getByteArray() const noexcept { return bytearray; }
 
   friend std::ostream& operator<<(std::ostream& os, const Binary& that) {
     os << "[";
@@ -49,26 +50,15 @@ template <std::size_t SIZE = 32> class Binary {
     os << "] -> " << Binary::B2D(that.bytearray);
     return os;
   }
-
-  Binary operator=(const Binary& that) noexcept
-  { bytearray = that.bytearray; }
-
-  Binary operator+(const Binary& that) noexcept {
-    Binary temp = *this;
-    temp.bytearray = Binary::add(this->bytearray, that.bytearray);
-    return temp;
+  
+  Binary& operator+=(Binary const& arg) {
+    add_to(this -> bytearray, arg.bytearray);
+    return *this;
   }
 
-  Binary operator-(const Binary& that) noexcept {
-    Binary temp = *this;
-    temp.bytearray = Binary::sub(this->bytearray, that.bytearray);
-    return temp;
-  }
-
-  Binary operator*(const Binary& that) noexcept {
-    Binary temp = *this;
-    temp.bytearray = Binary::mul(this->bytearray, that.bytearray);
-    return temp;
+  Binary& operator-=(Binary const& arg) {
+    sub_from(this -> bytearray, arg.bytearray);
+    return *this;
   }
   
   bool operator==(const Binary& arg) const noexcept
@@ -83,25 +73,38 @@ template <std::size_t SIZE = 32> class Binary {
 
   bytearray_t bytearray;
   
-  static bytearray_t add(const bytearray_t& lhs, const bytearray_t& rhs) {
-    bytearray_t res = {0};
-    bool rem = 0;
-    for (std::size_t idx = SIZE; idx-- > 0;) {
-      res[idx] = (lhs[idx] ^ rhs[idx])^ rem;
-      rem = (lhs[idx] & rhs[idx]) | (rem & (lhs[idx] ^ rhs[idx]));
-    }
-    return res;
-  }
+ static bool add_to(bytearray_t& lhs, bytearray_t const& rhs) noexcept
+ {
+   bool carry = 0;
+   for (std::size_t idx = SIZE; idx-- > 0;) {
+     auto temp = ((lhs[idx] ^ rhs[idx]) ^ carry);
+     carry = (lhs[idx] & rhs[idx]) | (carry & (lhs[idx] ^ rhs[idx]));
+     lhs[idx] = temp;
+   }
+   return carry;
+ }
 
-  static bytearray_t sub(const bytearray_t& lhs, const bytearray_t& rhs) {
-    bytearray_t res = {0};
-    bool rem = 0;
-    for (std::size_t idx = SIZE; idx-- > 0;) {
-      res[idx] = rem ^ (lhs[idx] ^ rhs[idx]);
-      rem = (! lhs[idx] & rhs[idx]) || (! lhs[idx] & rem) || (rhs[idx] & rem);
-    }
-    return res;
-  }
+ static std::tuple<bytearray_t, bool> add(bytearray_t lhs, bytearray_t const& rhs) noexcept
+ {
+     auto carry = add_to(lhs, rhs);
+     return std::tuple<bytearray_t, bool> {lhs, carry};
+ }
+
+ static bool sub_from(bytearray_t& lhs, bytearray_t const& rhs) {
+   bool carry = 0;
+   for (std::size_t idx = SIZE; idx-- > 0;) {
+     auto temp = carry ^ (lhs[idx] ^ rhs[idx]);
+     carry = (! lhs[idx] & rhs[idx]) || (! lhs[idx] & carry) || (rhs[idx] & carry);
+     lhs[idx] = temp;
+   }
+   return carry;
+ }
+
+ static std::tuple<bytearray_t, bool> sub(bytearray_t lhs, bytearray_t const& rhs) noexcept
+ {
+     auto carry = sub_from(lhs, rhs);
+     return std::tuple<bytearray_t, bool> {lhs, carry};
+ }
 
   static bytearray_t mul(bytearray_t lhs, bytearray_t rhs) {
     bytearray_t res = {0};
@@ -115,10 +118,12 @@ template <std::size_t SIZE = 32> class Binary {
     }
     return res;
   }
-
 };
 
-int main() {
-  for (std::size_t i = 0; i < 100; ++i) std::cout << Binary<32>(i) * Binary<32>(i + 2) << "\n";
-  return 0;
-}
+template <std::size_t SIZE>
+Binary<SIZE> operator+(Binary<SIZE> a, Binary<SIZE> const& b) noexcept
+{ a += b; return a; }
+
+template <std::size_t SIZE>
+Binary<SIZE> operator-(Binary<SIZE> a, Binary<SIZE> const& b) noexcept
+{ a -= b; return a; }
