@@ -73,38 +73,38 @@ template <std::size_t SIZE = 32> class Binary {
 
   bytearray_t bytearray;
   
- static bool add_to(bytearray_t& lhs, bytearray_t const& rhs) noexcept
- {
-   bool carry = 0;
-   for (std::size_t idx = SIZE; idx-- > 0;) {
-     auto temp = ((lhs[idx] ^ rhs[idx]) ^ carry);
-     carry = (lhs[idx] & rhs[idx]) | (carry & (lhs[idx] ^ rhs[idx]));
-     lhs[idx] = temp;
-   }
-   return carry;
- }
+  static bool add_to(bytearray_t& lhs, bytearray_t const& rhs) noexcept
+  {
+    bool carry = 0;
+    for (std::size_t idx = SIZE; idx-- > 0;) {
+      auto temp = ((lhs[idx] ^ rhs[idx]) ^ carry);
+      carry = (lhs[idx] & rhs[idx]) | (carry & (lhs[idx] ^ rhs[idx]));
+      lhs[idx] = temp;
+    }
+    return carry;
+  }
 
- static std::tuple<bytearray_t, bool> add(bytearray_t lhs, bytearray_t const& rhs) noexcept
- {
-     auto carry = add_to(lhs, rhs);
-     return std::tuple<bytearray_t, bool> {lhs, carry};
- }
+  static std::tuple<bytearray_t, bool> add(bytearray_t lhs, bytearray_t const& rhs) noexcept
+  {
+      auto carry = add_to(lhs, rhs);
+      return std::tuple<bytearray_t, bool> {lhs, carry};
+  }
 
- static bool sub_from(bytearray_t& lhs, bytearray_t const& rhs) {
-   bool carry = 0;
-   for (std::size_t idx = SIZE; idx-- > 0;) {
-     auto temp = carry ^ (lhs[idx] ^ rhs[idx]);
-     carry = (! lhs[idx] & rhs[idx]) || (! lhs[idx] & carry) || (rhs[idx] & carry);
-     lhs[idx] = temp;
-   }
-   return carry;
- }
+  static bool sub_from(bytearray_t& lhs, bytearray_t const& rhs) {
+    bool carry = 0;
+    for (std::size_t idx = SIZE; idx-- > 0;) {
+      auto temp = carry ^ (lhs[idx] ^ rhs[idx]);
+      carry = (! lhs[idx] & rhs[idx]) || (! lhs[idx] & carry) || (rhs[idx] & carry);
+      lhs[idx] = temp;
+    }
+    return carry;
+  }
 
- static std::tuple<bytearray_t, bool> sub(bytearray_t lhs, bytearray_t const& rhs) noexcept
- {
-     auto carry = sub_from(lhs, rhs);
-     return std::tuple<bytearray_t, bool> {lhs, carry};
- }
+  static std::tuple<bytearray_t, bool> sub(bytearray_t lhs, bytearray_t const& rhs) noexcept
+  {
+      auto carry = sub_from(lhs, rhs);
+      return std::tuple<bytearray_t, bool> {lhs, carry};
+  }
 
   static bytearray_t mul(bytearray_t lhs, bytearray_t rhs) {
     bytearray_t res = {0};
