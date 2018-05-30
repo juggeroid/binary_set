@@ -61,6 +61,20 @@ template <std::size_t SIZE = 32> class Binary {
     return *this;
   }
   
+   //! @note If there's a necessity in bitwise comparison, define xnor function instead?
+  //! First byte should be checked to prevent incorrect result for negative values.
+
+  bool operator>(Binary const& arg) {
+    for (std::size_t idx = 1; idx < SIZE; ++idx) {
+      if (bytearray[idx] > arg.bytearray[idx]) return 1;
+      if (bytearray[idx] < arg.bytearray[idx]) return 0;
+    }
+  }
+
+  bool operator<(Binary const& arg) {
+    return !(*this > arg);
+  }
+  
   bool operator==(const Binary& arg) const noexcept
   { return (bytearray == arg.bytearray); }
 
