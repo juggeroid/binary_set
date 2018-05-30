@@ -124,7 +124,7 @@ template <std::size_t SIZE = 32> class Binary {
     bytearray_t res = {0};
     while (std::find(std::begin(lhs), std::end(lhs), 1) != std::end(lhs)) {
       if (rhs[SIZE - 1] & 1)
-        res = Binary::add(res, lhs);
+        Binary::add_to(res, lhs);
       //! @note right and left shifting
       std::rotate(std::rbegin(rhs), std::rbegin(rhs) + 1, std::rend(rhs));
       std::rotate(std::begin(lhs), std::begin(lhs) + 1, std::end(lhs));
