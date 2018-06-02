@@ -24,15 +24,18 @@ template <std::size_t SIZE = 32> class Binary {
   static_assert(SIZE <= 32,                   "size must not exceed 32");
   static_assert(SIZE && !(SIZE & (SIZE - 1)), "size must be a power of 2");
 
-  Binary() {}
+    Binary() {}
 
-  //! explicit constructor to avoid implicit convert from char
-  explicit Binary(int32_t num) {
+  // explicit constructor to avoid implicit convert from char
+  explicit Binary(int64_t num) {
     for (std::size_t idx = SIZE; idx-- > 0;) {
       bytearray[idx] = num & 0x01;
       num >>= 1;
     }
   }
+
+  Binary(Binary const& arg)
+  { bytearray = arg.bytearray; }
 
   //! @note uint32_t ???
   int32_t to_int() noexcept {
@@ -42,15 +45,6 @@ template <std::size_t SIZE = 32> class Binary {
     return decimal;
   }
 
-  bytearray_t& getByteArray() const noexcept { return bytearray; }
-
-  friend std::ostream& operator<<(std::ostream& os, const Binary& that) {
-    os << "[";
-    for (const auto& bit : that.bytearray) os << bit;
-    os << "] -> " << Binary::B2D(that.bytearray);
-    return os;
-  }
-  
   Binary& operator+=(Binary const& arg) {
     add_to(this -> bytearray, arg.bytearray);
     return *this;
@@ -60,27 +54,59 @@ template <std::size_t SIZE = 32> class Binary {
     sub_from(this -> bytearray, arg.bytearray);
     return *this;
   }
-  
-   //! @note If there's a necessity in bitwise comparison, define xnor function instead?
+
+  Binary operator*(const Binary& that) noexcept {
+    Binary temp = *this;
+    Binary::mul(this->bytearray, that.bytearray);
+    return temp;
+  }
+
+  //! @note Allow to access individual bits by its index.
+
+  auto& operator[](std::size_t idx)
+  { return bytearray[idx]; }
+
+  auto& operator[](std::size_t idx) const
+  { return bytearray[idx]; }
+
+  bytearray_t& getByteArray() const noexcept
+  { return bytearray; }
+
+
+  //! @note If there's a necessity in precise bitwise comparison, define xnor function instead?
   //! First byte should be checked to prevent incorrect result for negative values.
 
-  bool operator>(Binary const& arg) {
+  bool operator>(Binary const& arg) const {
     for (std::size_t idx = 1; idx < SIZE; ++idx) {
       if (bytearray[idx] > arg.bytearray[idx]) return 1;
       if (bytearray[idx] < arg.bytearray[idx]) return 0;
     }
   }
 
-  bool operator<(Binary const& arg) {
-    return !(*this > arg);
-  }
-  
-  bool operator==(const Binary& arg) const noexcept
+  bool operator<(Binary const& arg) const
+  { return (arg > *this); }
+
+  bool operator>=(Binary const& arg) const
+  { return !(*this < arg); }
+
+  bool operator<=(Binary const& arg) const
+  { return !(*this > arg); }
+
+  bool operator==(Binary const& arg) const noexcept
   { return (bytearray == arg.bytearray); }
 
-  bool operator!=(const Binary& arg) const noexcept
-  { return !(bytearray == arg.bytearray); }
+  bool operator!=(Binary const& arg) const noexcept
+  { return bytearray != arg.bytearray; }
 
+  //! @note std::ostream operator overloading (<<)
+  friend std::ostream& operator<<(std::ostream& os, const Binary<SIZE>& arg) noexcept {
+    os << "[";
+    for (const auto& bit: arg.bytearray)
+      os << bit;
+    os << "]";
+  return os;
+  }
+  
   //==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//==//
 
  private:
@@ -120,18 +146,22 @@ template <std::size_t SIZE = 32> class Binary {
       return std::tuple<bytearray_t, bool> {lhs, carry};
   }
 
-  static bytearray_t mul(bytearray_t lhs, bytearray_t rhs) {
-    bytearray_t res = {0};
-    while (std::find(std::begin(lhs), std::end(lhs), 1) != std::end(lhs)) {
-      if (rhs[SIZE - 1] & 1)
-        Binary::add_to(res, lhs);
-      //! @note right and left shifting
-      std::rotate(std::rbegin(rhs), std::rbegin(rhs) + 1, std::rend(rhs));
-      std::rotate(std::begin(lhs), std::begin(lhs) + 1, std::end(lhs));
-      rhs[0] = 0; lhs[SIZE - 1] = 0;
-    }
-    return res;
-  }
+static bytearray_t mul(bytearray_t lhs, bytearray_t rhs) {
+   bytearray_t res = {0};
+   while (std::find(std::begin(lhs), std::end(lhs), 1) != std::end(lhs)) {
+     if (rhs[SIZE - 1] & 1) {
+       Binary::add_to(res, lhs);
+      }
+
+     //! @note Shift to the right/left.
+     //!       std::copy with index shifted might be faster, although no benchmarks were conducted.
+
+     std::rotate(std::rbegin(rhs), std::rbegin(rhs) + 1, std::rend(rhs));
+     std::rotate(std::begin(lhs), std::begin(lhs) + 1, std::end(lhs));
+     rhs[0] = 0; lhs[SIZE - 1] = 0;
+   }
+   return res;
+ }
 };
 
 template <std::size_t SIZE>
