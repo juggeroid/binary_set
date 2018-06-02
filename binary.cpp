@@ -146,22 +146,21 @@ template <std::size_t SIZE = 32> class Binary {
       return std::tuple<bytearray_t, bool> {lhs, carry};
   }
 
-static bytearray_t mul(bytearray_t lhs, bytearray_t rhs) {
-   bytearray_t res = {0};
-   while (std::find(std::begin(lhs), std::end(lhs), 1) != std::end(lhs)) {
-     if (rhs[SIZE - 1] & 1) {
-       Binary::add_to(res, lhs);
-      }
-
-     //! @note Shift to the right/left.
-     //!       std::copy with index shifted might be faster, although no benchmarks were conducted.
-
-     std::rotate(std::rbegin(rhs), std::rbegin(rhs) + 1, std::rend(rhs));
-     std::rotate(std::begin(lhs), std::begin(lhs) + 1, std::end(lhs));
-     rhs[0] = 0; lhs[SIZE - 1] = 0;
-   }
-   return res;
- }
+  static bytearray_t mul(bytearray_t lhs, bytearray_t rhs) {
+     bytearray_t res = {0};
+    while (std::find(std::begin(lhs), std::end(lhs), 1) != std::end(lhs)) {
+       if (rhs[SIZE - 1] & 1) {
+         Binary::add_to(res, lhs);
+        }
+      //! @note Shift to the right/left.
+      //!       std::copy with index shifted might be faster, although no benchmarks were conducted.
+      std::rotate(std::rbegin(rhs), std::rbegin(rhs) + 1, std::rend(rhs));
+      std::rotate(std::begin(lhs), std::begin(lhs) + 1, std::end(lhs));
+      rhs[0] = 0; lhs[SIZE - 1] = 0;
+    }
+    return res;
+  }
+  
 };
 
 template <std::size_t SIZE>
